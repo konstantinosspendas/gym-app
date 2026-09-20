@@ -76,3 +76,24 @@ def update_workout(
     db.refresh(workout)
 
     return workout
+
+
+@router.delete("/{workout_id}")
+def delete_workout(
+    workout_id: int,
+    db: Session = Depends(get_db)
+):
+    workout = db.query(models.Workout).filter(
+        models.Workout.id == workout_id
+    ).first()
+
+    if workout is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Workout not found"
+        )
+
+    db.delete(workout)
+    db.commit()
+
+    return {"message": "Workout deleted"}
