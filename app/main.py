@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 
-from app.routers import workouts
+from app.routers import workouts, exercises
 
 
 app = FastAPI(title="GymLogger Lite")
 
 app.include_router(workouts.router)
+app.include_router(exercises.router)
 
 
 @app.get("/")
