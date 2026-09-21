@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,6 +15,21 @@ router = APIRouter(
 def get_exercises(db: Session = Depends(get_db)):
     exercises = db.query(models.Exercise).all()
     return exercises
+
+
+@router.get("/{exercise_id}")
+def get_exercise(exercise_id: int, db: Session = Depends(get_db)):
+    exercise = db.query(models.Exercise).filter(
+        models.Exercise.id == exercise_id
+    ).first()
+
+    if exercise is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Exercise not found"
+        )
+
+    return exercise
 
 
 @router.post("/")
