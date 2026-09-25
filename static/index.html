@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Καταγραφή Προπονήσεων</title>
+</head>
+<body>
+
+    <h1>Καταγραφή Προπονήσεων</h1>
+
+    <h2>Προπονήσεις</h2>
+    <button onclick="loadWorkouts()">Εμφάνιση προπονήσεων</button>
+    <ul id="workouts"></ul>
+
+    <h2>Ασκήσεις</h2>
+    <button onclick="loadExercises()">Εμφάνιση ασκήσεων</button>
+    <ul id="exercises"></ul>
+
+    <h2>Στατιστικά</h2>
+    <button onclick="loadStats()">Εμφάνιση στατιστικών</button>
+    <div id="stats"></div>
+
+    <script>
+        async function loadWorkouts() {
+            const response = await fetch("/workouts/");
+            const data = await response.json();
+
+            const list = document.getElementById("workouts");
+            list.innerHTML = "";
+
+            data.forEach(workout => {
+                const item = document.createElement("li");
+                item.textContent =
+                    workout.title + " - " +
+                    workout.date + " - " +
+                    workout.duration + " λεπτά";
+
+                list.appendChild(item);
+            });
+        }
+
+        async function loadExercises() {
+            const response = await fetch("/exercises/");
+            const data = await response.json();
+
+            const list = document.getElementById("exercises");
+            list.innerHTML = "";
+
+            data.forEach(exercise => {
+                const item = document.createElement("li");
+                item.textContent =
+                    exercise.name + " - " +
+                    exercise.muscle_group;
+
+                list.appendChild(item);
+            });
+        }
+
+        async function loadStats() {
+            const response = await fetch("/stats/");
+            const data = await response.json();
+
+            document.getElementById("stats").innerHTML =
+                "Προπονήσεις: " + data.total_workouts +
+                "<br>Ασκήσεις: " + data.total_exercises +
+                "<br>Επιδόσεις: " + data.total_performances +
+                "<br>Συνολικό volume: " + data.total_volume;
+        }
+    </script>
+
+</body>
+</html>
