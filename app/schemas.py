@@ -2,14 +2,14 @@ from pydantic import BaseModel, Field
 
 
 class WorkoutCreate(BaseModel):
-    title: str
-    date: str
+    title: str = Field(min_length=1)
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     duration: int | None = Field(default=None, gt=0)
     notes: str | None = None
 
 
 class ExerciseCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     muscle_group: str | None = None
 
 

@@ -1,24 +1,19 @@
 import time
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models
 
+router = APIRouter(prefix="/stats", tags=["Stats"])
 
-router = APIRouter(
-    prefix="/stats",
-    tags=["Stats"]
-)
-
-
-stats_cache = {
-    "data": None,
-    "time": 0
-}
-
+stats_cache = {"data": None, "time": 0}
 CACHE_TIME = 30
+
+
+def clear_stats_cache():
+    stats_cache["data"] = None
+    stats_cache["time"] = 0
 
 
 @router.get("/")
@@ -33,7 +28,6 @@ def get_stats(db: Session = Depends(get_db)):
 
     workouts = db.query(models.Workout).count()
     exercises = db.query(models.Exercise).count()
-
     performances = db.query(models.WorkoutExercise).all()
 
     total_volume = 0
@@ -57,4 +51,3 @@ def get_stats(db: Session = Depends(get_db)):
     stats_cache["time"] = current_time
 
     return result
-

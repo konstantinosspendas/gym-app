@@ -30,16 +30,21 @@ class WorkoutExercise(Base):
     __tablename__ = "επιδόσεις"
 
     id = Column(Integer, primary_key=True, index=True)
+
     workout_id = Column(
         Integer,
         ForeignKey("προπονησεις.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
+
     exercise_id = Column(
         Integer,
         ForeignKey("ασκησεις.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
+
     sets = Column(Integer, nullable=False)
     reps = Column(Integer, nullable=False)
     weight = Column(Float)

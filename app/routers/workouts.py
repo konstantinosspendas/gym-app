@@ -3,18 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas
+from app.routers.stats import clear_stats_cache
 
-
-router = APIRouter(
-    prefix="/workouts",
-    tags=["Workouts"]
-)
+router = APIRouter(prefix="/workouts", tags=["Workouts"])
 
 
 @router.get("/")
 def get_workouts(db: Session = Depends(get_db)):
-    workouts = db.query(models.Workout).all()
-    return workouts
+    return db.query(models.Workout).all()
 
 
 @router.get("/{workout_id}")
@@ -24,10 +20,7 @@ def get_workout(workout_id: int, db: Session = Depends(get_db)):
     ).first()
 
     if workout is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Workout not found"
-        )
+        raise HTTPException(status_code=404, detail="Workout not found")
 
     return workout
 
@@ -46,6 +39,7 @@ def create_workout(
 
     db.add(new_workout)
     db.commit()
+    clear_stats_cache()
     db.refresh(new_workout)
 
     return new_workout
@@ -54,46 +48,43 @@ def create_workout(
 @router.put("/{workout_id}")
 def update_workout(
     workout_id: int,
-    workout_data: schemas.WorkoutCreate,
+    workout: schemas.WorkoutCreate,
     db: Session = Depends(get_db)
 ):
-    workout = db.query(models.Workout).filter(
+    existing_workout = db.query(models.Workout).filter(
         models.Workout.id == workout_id
     ).first()
 
-    if workout is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Workout not found"
-        )
+    if existing_workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
 
-    workout.title = workout_data.title
-    workout.date = workout_data.date
-    workout.duration = workout_data.duration
-    workout.notes = workout_data.notes
+    existing_workout.title = workout.title
+    existing_workout.date = workout.date
+    existing_workout.duration = workout.duration
+    existing_workout.notes = workout.notes
 
     db.commit()
-    db.refresh(workout)
+    clear_stats_cache()
+    db.refresh(existing_workout)
 
-    return workout
+    return existing_workout
 
 
 @router.delete("/{workout_id}")
-def delete_workout(
-    workout_id: int,
-    db: Session = Depends(get_db)
-):
+def delete_workout(workout_id: int, db: Session = Depends(get_db)):
     workout = db.query(models.Workout).filter(
         models.Workout.id == workout_id
     ).first()
 
     if workout is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Workout not found"
-        )
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    db.query(models.WorkoutExercise).filter(
+        models.WorkoutExercise.workout_id == workout_id
+    ).delete()
 
     db.delete(workout)
     db.commit()
+    clear_stats_cache()
 
     return {"message": "Workout deleted"}

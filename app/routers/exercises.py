@@ -3,18 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas
+from app.routers.stats import clear_stats_cache
 
-
-router = APIRouter(
-    prefix="/exercises",
-    tags=["Exercises"]
-)
+router = APIRouter(prefix="/exercises", tags=["Exercises"])
 
 
 @router.get("/")
 def get_exercises(db: Session = Depends(get_db)):
-    exercises = db.query(models.Exercise).all()
-    return exercises
+    return db.query(models.Exercise).all()
 
 
 @router.get("/{exercise_id}")
@@ -24,10 +20,7 @@ def get_exercise(exercise_id: int, db: Session = Depends(get_db)):
     ).first()
 
     if exercise is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Exercise not found"
-        )
+        raise HTTPException(status_code=404, detail="Exercise not found")
 
     return exercise
 
@@ -44,6 +37,7 @@ def create_exercise(
 
     db.add(new_exercise)
     db.commit()
+    clear_stats_cache()
     db.refresh(new_exercise)
 
     return new_exercise
@@ -52,45 +46,41 @@ def create_exercise(
 @router.put("/{exercise_id}")
 def update_exercise(
     exercise_id: int,
-    exercise_data: schemas.ExerciseCreate,
+    exercise: schemas.ExerciseCreate,
     db: Session = Depends(get_db)
 ):
-    exercise = db.query(models.Exercise).filter(
+    existing_exercise = db.query(models.Exercise).filter(
         models.Exercise.id == exercise_id
     ).first()
 
-    if exercise is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Exercise not found"
-        )
+    if existing_exercise is None:
+        raise HTTPException(status_code=404, detail="Exercise not found")
 
-    exercise.name = exercise_data.name
-    exercise.muscle_group = exercise_data.muscle_group
+    existing_exercise.name = exercise.name
+    existing_exercise.muscle_group = exercise.muscle_group
 
     db.commit()
-    db.refresh(exercise)
+    clear_stats_cache()
+    db.refresh(existing_exercise)
 
-    return exercise
+    return existing_exercise
 
 
 @router.delete("/{exercise_id}")
-def delete_exercise(
-    exercise_id: int,
-    db: Session = Depends(get_db)
-):
+def delete_exercise(exercise_id: int, db: Session = Depends(get_db)):
     exercise = db.query(models.Exercise).filter(
         models.Exercise.id == exercise_id
     ).first()
 
     if exercise is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Exercise not found"
-        )
+        raise HTTPException(status_code=404, detail="Exercise not found")
+
+    db.query(models.WorkoutExercise).filter(
+        models.WorkoutExercise.exercise_id == exercise_id
+    ).delete()
 
     db.delete(exercise)
     db.commit()
+    clear_stats_cache()
 
     return {"message": "Exercise deleted"}
-
